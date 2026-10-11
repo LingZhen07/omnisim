@@ -54,6 +54,8 @@ attributable. Note ``POST /sim/reset`` does NOT rewind ``engine_time_ms``
 from __future__ import annotations
 
 import rclpy
+from rclpy.clock import Clock as RclClock
+from rclpy.clock import ClockType
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rosgraph_msgs.msg import Clock
@@ -99,7 +101,10 @@ class ClockNode(Node):
         self._warned_fallback = False
         self._warned_unreachable = False
 
-        self.create_timer(1.0 / max(rate, 0.1), self.tick)
+        # Poll independently of system realtime adjustments. Published stamps
+        # still come from the simulator, including legitimate world-load rewinds.
+        self._poll_clock = RclClock(clock_type=ClockType.STEADY_TIME)
+        self.create_timer(1.0 / max(rate, 0.1), self.tick, clock=self._poll_clock)
         src = f"the robot bridge {bridge_url} (fallback {url})" if self.bridge else url
         self.get_logger().info(
             f"publishing /clock from {src} at {rate:g} Hz "
