@@ -54,7 +54,11 @@ CHAT_DEMO_COUNT = 21
 # 8775 so it cannot collide with a chat demo on 8765. Deliberately absent from
 # demos.json, DEMOS.md and the smoke sweep -- an exclusion recorded is better
 # than an exclusion hidden, so it is named here and asserted absent below.
-CHAT_FIXTURES = {"omnilink_husky_langsoak.omniworld"}
+CHAT_FIXTURES = {
+    "omnilink_husky_langsoak.omniworld",
+    # Manual Husky Nav2 regression benchmark only; not part of the launcher gallery.
+    "husky_nav2_static_obstacle.omniworld",
+}
 
 
 def _chat_demo_worlds() -> list[Path]:
@@ -214,8 +218,8 @@ def test_chat_demo_count_is_the_one_true_count():
 def test_chat_fixture_is_not_catalogued_as_a_demo(fixture: str):
     """A benchmark fixture must stay OUT of the demo surfaces.
 
-    The langsoak Husky is a measurement rig on port 8775. Promoting it to a demo
-    would make every '21' on every page wrong in the other direction.
+    The langsoak and static-obstacle Husky worlds are benchmark fixtures.
+    Promoting either to a demo would invalidate the documented demo count.
     """
     assert (CHAT_DIR / fixture).is_file(), (
         f"{fixture} is declared a chat fixture here but does not exist. If it "

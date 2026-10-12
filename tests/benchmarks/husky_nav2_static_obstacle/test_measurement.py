@@ -645,12 +645,19 @@ def test_startup_dict_metadata(tmp_path, metadata):
     assert row['stamp_ns'] == 1000000002
 
 
+@pytest.mark.parametrize('control', [False, True])
 @pytest.mark.parametrize('mode', ['resolved', 'expired', 'navigation_failed', 'outside', 'incoming', 'interrupted'])
-def test_final_scan_retry_drain_and_verdict(trial, monkeypatch, mode):
+def test_final_scan_retry_drain_and_verdict(trial, monkeypatch, mode, control):
     """Production drain settles the frozen batch before production verdict writes results."""
     import io
     from types import SimpleNamespace as NS
 
+    trial.control = control
+    if control:
+        trial.data['collector_control'] = {
+            'matched_began_ended_pairs': [['HUSKY', 'NAV_OBSTACLE']],
+            'native_contact_event_points': [[1.7, 0.0, 0.3]],
+        }
     now = [10.0]
     monkeypatch.setattr(runner.time, 'monotonic', lambda: now[0])
     trial.tf_resolved = 0
@@ -691,8 +698,8 @@ def test_final_scan_retry_drain_and_verdict(trial, monkeypatch, mode):
     trial.drain_scan_retries(pending, project, raw, spin_until)
     trial.data['scan_tf_expired'] = trial.tf_expired
     expected_measurement = 'PASS' if mode in ('resolved', 'outside') else 'INVALID'
-    expected_navigation = 'FAIL' if mode == 'navigation_failed' else 'PASS'
-    expected_overall = 'INVALID' if expected_measurement == 'INVALID' else expected_navigation
+    expected_navigation = 'NOT_RUN' if control else 'FAIL' if mode == 'navigation_failed' else 'PASS'
+    expected_overall = 'INVALID' if expected_measurement == 'INVALID' else 'PASS' if control else expected_navigation
     assert assess(trial) == (expected_navigation, expected_measurement, expected_overall)
     assert outside not in callbacks
     assert all(not item[3] for item in pending)
@@ -717,8 +724,8 @@ def test_scan_measurement_closes_before_drain_and_node_cleanup():
     """The live callback excludes new scans after the action result, retaining TF during drain."""
     source = Path(runner.__file__).read_text()
     assert 'if self.measurement_finished:\n                return' in source
-    end = source.index('self.measurement_finished = True')
-    drain = source.index('self.drain_scan_retries(pending_scans, project_scan, raw, spin_until)')
-    cleanup = source.index('self.recorder.close()', drain)
-    destroy = source.index('node.destroy_node()', cleanup)
-    assert end < drain < cleanup < destroy
+    for end in (source.index('self.measurement_finished = True'), source.rindex('self.measurement_finished = True')):
+        drain = source.index('self.drain_scan_retries(pending_scans, project_scan, raw, spin_until)', end)
+        cleanup = source.index('self.recorder.close()', drain)
+        destroy = source.index('node.destroy_node()', cleanup)
+        assert end < drain < cleanup < destroy

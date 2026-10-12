@@ -23,8 +23,19 @@ in the Nav2 log. Contact positive control passed with three complete episodes.
 The two groups have different startup observation conditions; the diagnostic
 results do not establish a fix for the earlier scan drop or long-term stability.
 
-The latest pending-scan finalization and DDS-metadata fixes have only synthetic,
-engine-free validation; they have not been exercised in a new live trial.
+A separate cold-start trial after the navigation pending-scan finalization and
+DDS-metadata fixes also passed: action SUCCEEDED, navigation/measurement/overall
+PASS, 15.808 simulation seconds and 33.962 monotonic wall seconds. Position error
+was 0.145 m, yaw error 0.230 rad, traveled distance 4.876 m and minimum sampled
+hull clearance 0.450 m, with zero observed obstacle contacts, sampled overlaps
+or Nav2 scan drops. All 117 immediate scan TF failures were accounted for:
+116 resolved and one startup-only expiry; none remained pending. Scan/TF DDS
+metadata was populated. No retry straddled the action-result boundary in that
+trial, so the exceptional finalization paths remain covered by synthetic tests.
+This additional trial is separate from the two groups above.
+
+The subsequent reuse of the same drain for contact-control finalization has
+engine-free validation only; the positive-control run has not been repeated.
 
 Historical v9.2.2 trials demonstrated physical detours and one validated
 behavior/measurement PASS. Of three subsequent completed navigation trials,
@@ -114,7 +125,8 @@ python tests/benchmarks/husky_nav2_static_obstacle/run_trial.py \
 ```
 
 These CLI forms and environment paths were exercised in the validated worktree;
-the latest measurement-only fixes have not been live-tested. Domain 0 must be
+navigation finalization and DDS metadata have one live PASS as described above.
+The subsequent contact-control finalization change is engine-free tested only. Domain 0 must be
 free of unrelated ROS publishers. Choose new output paths if those directories
 already exist. Existing output is never overwritten. The collector control intentionally drives into the box and
 backs away, without Nav2. A PASS control artifact with matched attributed

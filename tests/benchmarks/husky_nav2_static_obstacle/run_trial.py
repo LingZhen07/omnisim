@@ -500,10 +500,6 @@ class Trial:
                                            "native_contact_event_points": [e["point"] for e in self.data["contact_events"]
                                                                            if e["type"] == "contact.began"],
                                            "separation_m": touching_x - end_state["x"]}
-        spin_until(lambda: self.tf_resolved >= self.tf_misses, 1)
-        self.data["scan_tf_misses"] = self.tf_misses
-        self.data["scan_tf_resolved"] = self.tf_resolved
-        self.data["scan_tf_expired"] = self.tf_expired
         print(json.dumps({"collector_control": self.data["collector_control"], "timing": self.data["timing"]}), flush=True)
 
     def retry_scans(self, pending_scans, project_scan, raw, final=False):
@@ -765,6 +761,11 @@ class Trial:
             self.measurement_started = True
             if self.control:
                 self.validate_collectors(node, zero, spin_until)
+                self.measurement_started = False
+                self.measurement_finished = True
+                self.drain_scan_retries(pending_scans, project_scan, raw, spin_until)
+                self.data.update(scan_tf_misses=self.tf_misses, scan_tf_resolved=self.tf_resolved,
+                                 scan_tf_expired=self.tf_expired)
                 return
             if not client.wait_for_server(timeout_sec=10):
                 raise RuntimeError("NavigateToPose unavailable")
