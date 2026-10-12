@@ -361,3 +361,11 @@ ros2 launch omnisim_ros2 omnisim_bringup.launch.py \
 SmacPlannerHybrid (Dubin / car‑like, `minimum_turning_radius`) made it perform reverse
 maneuvers that never reached the goal. The Hybrid block is kept commented in
 `params/omnisim_nav2_params.yaml` if you need curvature‑constrained planning.
+
+
+## Static-obstacle benchmark
+
+For the isolated, manually invoked Husky scan-fed avoidance experiment, see
+[the benchmark guide](../../../../tests/benchmarks/husky_nav2_static_obstacle/README.md).
+The guide reports grouped live-validation results, strict startup scan-drop
+handling, and sampled-measurement limitations.
